@@ -6,6 +6,15 @@ import { UsersList } from './components/UsersList'
 
 const API_URL = 'https://randomuser.me/api?'
 
+const fetchUsers = async ({ page }: { page: number }) => {
+  return await fetch(`${API_URL}seed=amaimus&results=10&page=${page}`)
+    .then(async res => {
+      if (!res.ok) throw new Error('Error retrieving data')
+      return await res.json()
+    })
+    .then(res => res.results)
+}
+
 function App () {
   const [users, setUsers] = useState<User[]>([])
   const [showRowColors, setShowRowColors] = useState(false)
@@ -32,15 +41,13 @@ function App () {
   useEffect(() => {
     setLoading(true)
     setError(false)
-
-    fetch(`${API_URL}seed=amaimus&results=10&page=${currentPage}`)
-      .then(async res => {
-        if (!res.ok) throw new Error('Error retrieving data')
-        return await res.json()
-      })
-      .then(res => {
-        setUsers(prevUsers => prevUsers.concat(res.results))
-        originalUsers.current = res.results
+    fetchUsers({ page: currentPage })
+      .then(responseUsers => {
+        setUsers(prevUsers => {
+          const newUsers = prevUsers.concat(responseUsers)
+          originalUsers.current = newUsers
+          return newUsers
+        })
       })
       .catch(err => { setError(err.message) })
       .finally(() => { setLoading(false) })
@@ -94,9 +101,13 @@ function App () {
             showRowColors={showRowColors}
           />
         )}
+
         { loading && <p>Loading</p>}
+
         { !loading && error && <p> {error} </p>}
+
         { !loading && !error && sortedUsers.length === 0 && <p>No hay usuarios</p>}
+
         { !loading && !error && sortedUsers.length > 0 &&
           <button onClick={() => { setCurrentPage(currentPage + 1) }}>Load more</button>
         }
