@@ -80,7 +80,7 @@ function App () {
   return (
     <>
       <h1>React Typescript Proficiency Test</h1>
-      <header>
+      <header style={{ marginBottom: '36px', display: 'flex', gap: '8px', justifyContent: 'center' }}>
         <button onClick={toggleColors}>
           Show Row Colors
         </button>
