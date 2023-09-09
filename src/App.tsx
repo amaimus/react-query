@@ -1,31 +1,18 @@
 /* eslint-disable @typescript-eslint/strict-boolean-expressions */
 import { useMemo, useState } from 'react'
 import './App.css'
-import { SortBy, type User } from './types.d'
-import { UsersList } from './components/UsersList'
-import { useQuery } from '@tanstack/react-query'
+import { SortBy } from './types.d'
+import { UsersList } from './components/UsersList.tsx'
+import { Results } from './components/Results.tsx'
+import { useUsers } from './hooks/useUsers'
 
-const API_URL = 'https://randomuser.me/api?'
-
-const fetchUsers = async ({ page }: { page: number }) => {
-  return await fetch(`${API_URL}seed=amaimus&results=10&page=${page}`)
-    .then(async res => {
-      if (!res.ok) throw new Error('Error retrieving data')
-      return await res.json()
-    })
-    .then(res => res.results)
-}
-
+/* , fetchNextPage, hasNextPage */
 function App () {
-  const { isLoading, isError, data: users = [], refetch } = useQuery<User[]>(
-    ['users'],
-    async () => await fetchUsers({ page: 1 })
-  )
+  const { isLoading, isError, users, refetch, fetchNextPage, hasNextPage } = useUsers()
+
   const [showRowColors, setShowRowColors] = useState(false)
   const [sorting, setSorting] = useState<SortBy>(SortBy.NONE)
   const [filterCountry, setFilterCountry] = useState<string | null>(null)
-
-  const [currentPage, setCurrentPage] = useState(1)
 
   const toggleColors = () => {
     setShowRowColors(!showRowColors)
@@ -36,8 +23,8 @@ function App () {
     setUsers(filteredUsers) */
   }
 
-  const resetInitialState = async () => {
-    await refetch()
+  const resetInitialState = () => {
+    void refetch()
   }
 
   const filteredUsers = useMemo(() => {
@@ -80,6 +67,7 @@ function App () {
         <input type='text' onChange={(e) => { setFilterCountry(e.target.value) }} placeholder='Filter by...'/>
       </header>
       <main>
+        <Results />
         { sortedUsers.length > 0 && (
           <UsersList
             changeSorting={handleChangeSorting}
@@ -95,8 +83,8 @@ function App () {
 
         { !isLoading && !isError && sortedUsers.length === 0 && <p>No hay usuarios</p>}
 
-        { !isLoading && !isError && sortedUsers.length > 0 &&
-          <button onClick={() => { setCurrentPage(currentPage + 1) }}>Load more</button>
+        { !isLoading && !isError && hasNextPage &&
+          <button onClick={() => { void fetchNextPage() }}>Load more</button>
         }
 
       </main>
