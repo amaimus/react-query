@@ -1,8 +1,9 @@
 /* eslint-disable @typescript-eslint/strict-boolean-expressions */
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import './App.css'
 import { SortBy, type User } from './types.d'
 import { UsersList } from './components/UsersList'
+import { useQuery } from '@tanstack/react-query'
 
 const API_URL = 'https://randomuser.me/api?'
 
@@ -16,42 +17,30 @@ const fetchUsers = async ({ page }: { page: number }) => {
 }
 
 function App () {
-  const [users, setUsers] = useState<User[]>([])
+  const { isLoading, isError, data: users = [] } = useQuery<User[]>(
+    ['users'],
+    async () => await fetchUsers({ page: 1 })
+  )
   const [showRowColors, setShowRowColors] = useState(false)
   const [sorting, setSorting] = useState<SortBy>(SortBy.NONE)
-  const originalUsers = useRef<User[]>([])
   const [filterCountry, setFilterCountry] = useState<string | null>(null)
-  const [loading, setLoading] = useState<boolean>(false)
-  const [error, setError] = useState(false)
+
   const [currentPage, setCurrentPage] = useState(1)
+
+  /* const originalUsers = useRef<User[]>([]) */
 
   const toggleColors = () => {
     setShowRowColors(!showRowColors)
   }
 
   const handleDeleteUser = (loginId: string) => {
-    const filteredUsers = users.filter(user => user.login.uuid !== loginId)
-    setUsers(filteredUsers)
+    /* const filteredUsers = users.filter(user => user.login.uuid !== loginId)
+    setUsers(filteredUsers) */
   }
 
   const resetInitialState = () => {
-    setUsers(originalUsers.current)
+    /* setUsers(originalUsers.current) */
   }
-
-  useEffect(() => {
-    setLoading(true)
-    setError(false)
-    fetchUsers({ page: currentPage })
-      .then(responseUsers => {
-        setUsers(prevUsers => {
-          const newUsers = prevUsers.concat(responseUsers)
-          originalUsers.current = newUsers
-          return newUsers
-        })
-      })
-      .catch(err => { setError(err.message) })
-      .finally(() => { setLoading(false) })
-  }, [currentPage])
 
   const filteredUsers = useMemo(() => {
     return filterCountry
@@ -102,13 +91,13 @@ function App () {
           />
         )}
 
-        { loading && <p>Loading</p>}
+        { isLoading && <p>Loading</p>}
 
-        { !loading && error && <p> {error} </p>}
+        { !isLoading && isError && <p> {isError} </p>}
 
-        { !loading && !error && sortedUsers.length === 0 && <p>No hay usuarios</p>}
+        { !isLoading && !isError && sortedUsers.length === 0 && <p>No hay usuarios</p>}
 
-        { !loading && !error && sortedUsers.length > 0 &&
+        { !isLoading && !isError && sortedUsers.length > 0 &&
           <button onClick={() => { setCurrentPage(currentPage + 1) }}>Load more</button>
         }
 
