@@ -8,7 +8,8 @@ export function useUsers () {
     fetchUsers,
     {
       getNextPageParam: (lastPage) => lastPage.nextPage,
-      refetchOnWindowFocus: false
+      refetchOnWindowFocus: false,
+      staleTime: 1000 * 60 // 1 min
     }
   )
   const users = data?.pages?.flatMap(page => page.users) ?? []
