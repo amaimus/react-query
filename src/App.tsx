@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/strict-boolean-expressions */
-import { useMemo, useRef, useState } from 'react'
+import { useMemo, useState } from 'react'
 import './App.css'
 import { SortBy, type User } from './types.d'
 import { UsersList } from './components/UsersList'
@@ -17,7 +17,7 @@ const fetchUsers = async ({ page }: { page: number }) => {
 }
 
 function App () {
-  const { isLoading, isError, data: users = [] } = useQuery<User[]>(
+  const { isLoading, isError, data: users = [], refetch } = useQuery<User[]>(
     ['users'],
     async () => await fetchUsers({ page: 1 })
   )
@@ -26,8 +26,6 @@ function App () {
   const [filterCountry, setFilterCountry] = useState<string | null>(null)
 
   const [currentPage, setCurrentPage] = useState(1)
-
-  /* const originalUsers = useRef<User[]>([]) */
 
   const toggleColors = () => {
     setShowRowColors(!showRowColors)
@@ -38,8 +36,8 @@ function App () {
     setUsers(filteredUsers) */
   }
 
-  const resetInitialState = () => {
-    /* setUsers(originalUsers.current) */
+  const resetInitialState = async () => {
+    await refetch()
   }
 
   const filteredUsers = useMemo(() => {
