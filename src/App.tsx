@@ -4,7 +4,7 @@ import './App.css'
 import { SortBy, type User } from './types.d'
 import { UsersList } from './components/UsersList'
 
-const API_URL = 'https://randomuser.me/api/?results=100'
+const API_URL = 'https://randomuser.me/api/?results=10'
 
 function App () {
   const [users, setUsers] = useState<User[]>([])
@@ -12,6 +12,8 @@ function App () {
   const [sorting, setSorting] = useState<SortBy>(SortBy.NONE)
   const originalUsers = useRef<User[]>([])
   const [filterCountry, setFilterCountry] = useState<string | null>(null)
+  const [loading, setLoading] = useState<boolean>(false)
+  const [error, setError] = useState(false)
 
   const toggleColors = () => {
     setShowRowColors(!showRowColors)
@@ -27,13 +29,20 @@ function App () {
   }
 
   useEffect(() => {
+    setLoading(true)
+    setError(false)
+
     fetch(API_URL)
-      .then(async res => await res.json())
+      .then(async res => {
+        if (!res.ok) throw new Error('Error retrieving data')
+        return await res.json()
+      })
       .then(res => {
         setUsers(res.results)
         originalUsers.current = res.results
       })
-      .catch(err => { console.error(err) })
+      .catch(err => { setError(err.message) })
+      .finally(() => { setLoading(false) })
   }, [])
 
   const filteredUsers = useMemo(() => {
@@ -76,12 +85,17 @@ function App () {
         <input type='text' onChange={(e) => { setFilterCountry(e.target.value) }} placeholder='Filter by...'/>
       </header>
       <main>
-        <UsersList
-          changeSorting={handleChangeSorting}
-          deleteUser={handleDeleteUser}
-          users={sortedUsers}
-          showRowColors={showRowColors}
-        />
+        { loading && <p>Loading</p>}
+        { !loading && error && <p> {error} </p>}
+        { !loading && !error && sortedUsers.length === 0 && <p>No hay usuarios</p>}
+        { !loading && !error && sortedUsers.length > 0 && (
+          <UsersList
+            changeSorting={handleChangeSorting}
+            deleteUser={handleDeleteUser}
+            users={sortedUsers}
+            showRowColors={showRowColors}
+          />
+        )}
       </main>
     </>
   )
