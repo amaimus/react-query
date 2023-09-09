@@ -4,7 +4,7 @@ import './App.css'
 import { SortBy, type User } from './types.d'
 import { UsersList } from './components/UsersList'
 
-const API_URL = 'https://randomuser.me/api/?results=10'
+const API_URL = 'https://randomuser.me/api?'
 
 function App () {
   const [users, setUsers] = useState<User[]>([])
@@ -14,6 +14,7 @@ function App () {
   const [filterCountry, setFilterCountry] = useState<string | null>(null)
   const [loading, setLoading] = useState<boolean>(false)
   const [error, setError] = useState(false)
+  const [currentPage, setCurrentPage] = useState(1)
 
   const toggleColors = () => {
     setShowRowColors(!showRowColors)
@@ -32,18 +33,18 @@ function App () {
     setLoading(true)
     setError(false)
 
-    fetch(API_URL)
+    fetch(`${API_URL}seed=amaimus&results=10&page=${currentPage}`)
       .then(async res => {
         if (!res.ok) throw new Error('Error retrieving data')
         return await res.json()
       })
       .then(res => {
-        setUsers(res.results)
+        setUsers(prevUsers => prevUsers.concat(res.results))
         originalUsers.current = res.results
       })
       .catch(err => { setError(err.message) })
       .finally(() => { setLoading(false) })
-  }, [])
+  }, [currentPage])
 
   const filteredUsers = useMemo(() => {
     return filterCountry
@@ -85,10 +86,7 @@ function App () {
         <input type='text' onChange={(e) => { setFilterCountry(e.target.value) }} placeholder='Filter by...'/>
       </header>
       <main>
-        { loading && <p>Loading</p>}
-        { !loading && error && <p> {error} </p>}
-        { !loading && !error && sortedUsers.length === 0 && <p>No hay usuarios</p>}
-        { !loading && !error && sortedUsers.length > 0 && (
+        { sortedUsers.length > 0 && (
           <UsersList
             changeSorting={handleChangeSorting}
             deleteUser={handleDeleteUser}
@@ -96,6 +94,13 @@ function App () {
             showRowColors={showRowColors}
           />
         )}
+        { loading && <p>Loading</p>}
+        { !loading && error && <p> {error} </p>}
+        { !loading && !error && sortedUsers.length === 0 && <p>No hay usuarios</p>}
+        { !loading && !error && sortedUsers.length > 0 &&
+          <button onClick={() => { setCurrentPage(currentPage + 1) }}>Load more</button>
+        }
+
       </main>
     </>
   )
